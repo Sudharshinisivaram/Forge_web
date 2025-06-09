@@ -1,96 +1,89 @@
 import express from 'express';
-import Todo from '../models/Todo.js';
+import { Todo } from '../models/Todo.js';
 
 const router = express.Router();
 
-// GET all todos
+// Get all todos
 router.get('/', async (req, res) => {
   try {
-    const todos = await Todo.find().sort({ createdAt: -1 });
+    const todos = Todo.findAll();
     res.json(todos);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// GET single todo
+// Get a specific todo
 router.get('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
+    const todo = Todo.findById(req.params.id);
     if (!todo) {
-      return res.status(404).json({ message: 'Todo not found' });
+      return res.status(404).json({ error: 'Todo not found' });
     }
     res.json(todo);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// CREATE new todo
+// Create a new todo
 router.post('/', async (req, res) => {
   try {
-    const todo = new Todo({
-      title: req.body.title,
-      description: req.body.description,
-      priority: req.body.priority,
-      dueDate: req.body.dueDate
-    });
+    const { title, description, priority, dueDate } = req.body;
     
-    const newTodo = await todo.save();
-    res.status(201).json(newTodo);
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const todo = Todo.create({ title, description, priority, dueDate });
+    res.status(201).json(todo);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// UPDATE todo
+// Update a todo
 router.put('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (!todo) {
-      return res.status(404).json({ message: 'Todo not found' });
+    const { title, description, completed, priority, dueDate } = req.body;
+    
+    const existingTodo = Todo.findById(req.params.id);
+    if (!existingTodo) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
 
-    const updatedTodo = await Todo.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    
-    res.json(updatedTodo);
+    const todo = Todo.update(req.params.id, { title, description, completed, priority, dueDate });
+    res.json(todo);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE todo
+// Delete a todo
 router.delete('/:id', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (!todo) {
-      return res.status(404).json({ message: 'Todo not found' });
+    const deleted = Todo.delete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
-
-    await Todo.findByIdAndDelete(req.params.id);
     res.json({ message: 'Todo deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// TOGGLE todo completion
+// Toggle todo completion status
 router.patch('/:id/toggle', async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (!todo) {
-      return res.status(404).json({ message: 'Todo not found' });
+    const existingTodo = Todo.findById(req.params.id);
+    if (!existingTodo) {
+      return res.status(404).json({ error: 'Todo not found' });
     }
 
-    todo.completed = !todo.completed;
-    const updatedTodo = await todo.save();
-    res.json(updatedTodo);
+    const todo = Todo.toggleComplete(req.params.id);
+    res.json(todo);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
