@@ -15,13 +15,11 @@ app.use(express.json());
 // Routes
 app.use('/api/todos', todoRoutes);
 
-// Health check route
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ message: 'Server is running!' });
+  res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log('Using SQLite database for data storage');
 });
